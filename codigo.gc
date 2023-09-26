@@ -1,0 +1,52 @@
+function createSlidesFromImages() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var templateSheet = ss.getSheetByName('ZZZZZZ'); #CAMBIAR por la PESTAÑA donde hay datos.
+  var dataRange = templateSheet.getDataRange();
+  var sheetContents = dataRange.getValues();
+  var header = sheetContents.shift();
+
+  // Abre la plantilla de presentación
+  var masterDeckID = "xxxxxxxx"; // Reemplaza con el ID de tu plantilla
+  var destinationFolder = DriveApp.getFolderById('xxxxxxx'); // Reemplaza con la carpeta de destino
+
+  sheetContents.forEach(function (row) {
+    // Abre la plantilla una sola vez y hace una copia para cada fila
+    var deck = DriveApp.getFileById(masterDeckID).makeCopy(row[1] + " " + row[0], destinationFolder);
+    var deckId = deck.getId();
+    var slides = SlidesApp.openById(deckId).getSlides();
+
+    // Itera sobre las diapositivas en la copia
+    slides.forEach(function (slide) {
+      // Reemplaza los marcadores de posición con los datos de la fila
+      header.forEach(function (field, index) {
+        var placeholder = "{{" + field + "}}";
+        var value = row[index];
+        slide.replaceAllText(placeholder, value);
+      });
+
+      // Verifica si hay un enlace a una imagen en la columna correspondiente
+      var imageUrl = row[11]; // Reemplaza con el índice de la columna que contiene los enlaces a las imágenes
+
+      if (imageUrl) {
+        // Descarga la imagen desde la URL
+        var imageBlob = UrlFetchApp.fetch(imageUrl).getBlob();
+        
+        // Inserta la imagen en la diapositiva
+        var image = slide.insertImage(imageBlob);
+        
+        // Ajusta el tamaño y la posición de la imagen según sea necesario
+        // Puedes agregar código adicional para personalizar el formato de la imagen
+        image.setWidth(200); // Reemplaza con el ancho deseado
+        image.setHeight(150); // Reemplaza con la altura deseada
+        image.setLeft(100); // Reemplaza con la posición horizontal deseada
+        image.setTop(100); // Reemplaza con la posición vertical deseada
+      }
+    });
+  });
+
+  // Agrega el encabezado nuevamente a los datos
+  sheetContents.unshift(header);
+
+  // Invierte la matriz de datos nuevamente
+  sheetContents.reverse();
+}
